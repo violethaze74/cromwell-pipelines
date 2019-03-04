@@ -136,7 +136,7 @@ task SplitIntervalList {
     memory: "3 GB"
     preemptible: 5
     disks: "local-disk " + disk_size + " HDD"
-    docker: "ldgauthier/exome_joint_calling@sha256:b234d6b1af4b0a5de5dda28c8516209986a95c579b5ebf75b0943e7850a226a5"
+    docker: "ldgauthier/gatk_exome_joint_calling"
   }
 
   output {
@@ -186,7 +186,7 @@ task ImportGVCFs {
     cpu: "2"
     disks: "local-disk " + disk_size + " HDD"
     preemptible: 5
-    docker: "ldgauthier/exome_joint_calling@sha256:b234d6b1af4b0a5de5dda28c8516209986a95c579b5ebf75b0943e7850a226a5"
+    docker: "ldgauthier/gatk_exome_joint_calling"
   }
 
   output {
@@ -233,7 +233,7 @@ task GenotypeGVCFs {
     cpu: "2"
     disks: "local-disk " + disk_size + " HDD"
     preemptible: 5
-    docker: "ldgauthier/exome_joint_calling@sha256:b234d6b1af4b0a5de5dda28c8516209986a95c579b5ebf75b0943e7850a226a5"
+    docker: "ldgauthier/gatk_exome_joint_calling"
   }
 
   output {
