@@ -13,36 +13,6 @@ workflow JointGenotypingForExomes {
 
   Int small_disk
   Int medium_disk
-  Int large_disk
-  Int huge_disk
-
-  Array[String] snp_recalibration_tranche_values
-  Array[String] snp_recalibration_annotation_values
-  Array[String] indel_recalibration_tranche_values
-  Array[String] indel_recalibration_annotation_values
-
-  File haplotype_database
-
-  File eval_interval_list
-  File hapmap_resource_vcf
-  File hapmap_resource_vcf_index
-  File omni_resource_vcf
-  File omni_resource_vcf_index
-  File one_thousand_genomes_resource_vcf
-  File one_thousand_genomes_resource_vcf_index
-  File mills_resource_vcf
-  File mills_resource_vcf_index
-  File axiomPoly_resource_vcf
-  File axiomPoly_resource_vcf_index
-  File dbsnp_resource_vcf = dbsnp_vcf
-  File dbsnp_resource_vcf_index = dbsnp_vcf_index
-
-  # ExcessHet is a phred-scaled p-value. We want a cutoff of anything more extreme
-  # than a z-score of -4.5 which is a p-value of 3.4e-06, which phred-scaled is 54.69
-  Float excess_het_threshold = 54.69
-  Float snp_filter_level
-  Float indel_filter_level
-  Int SNP_VQSR_downsampleFactor
 
   Array[Array[String]] sample_name_map_lines = read_tsv(sample_name_map)
   Int num_gvcfs = length(sample_name_map_lines)
