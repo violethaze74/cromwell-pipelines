@@ -1,3 +1,10 @@
+# Copyright (c) 2019 Genome Research Limited
+# Licensed under GPLv3, or later
+
+# Adapted from exome joint calling pipeline from the Broad Institute
+# Copyright (c) 2019 Broad Institute
+# Licensed under the BSD 3-Clause License
+
 workflow JointGenotypingForExomes {
   File unpadded_intervals_file
 
