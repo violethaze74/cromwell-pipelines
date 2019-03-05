@@ -96,7 +96,7 @@ task SplitIntervalList {
   File ref_dict
 
   command <<<
-    /usr/gitc/gatk SplitIntervals \
+    /gatk/gatk SplitIntervals \
       -L ${intervalList} -O  scatterDir -scatter ${scatterCount} -R ${ref_fasta} \
       -mode BALANCING_WITHOUT_INTERVAL_SUBDIVISION_WITH_OVERFLOW
    >>>
@@ -135,7 +135,7 @@ task ImportGVCFs {
     # a significant amount of non-heap memory for native libraries.
     # Also, testing has shown that the multithreaded reader initialization
     # does not scale well beyond 5 threads, so don't increase beyond that.
-    /usr/gitc/gatk --java-options -Xms4g \
+    /gatk/gatk --java-options -Xms4g \
       GenomicsDBImport \
       --genomicsdb-workspace-path ${workspace_dir_name} \
       --batch-size ${batch_size} \
@@ -176,9 +176,9 @@ task GenotypeGVCFs {
     tar -xf ${workspace_tar}
     WORKSPACE=$(basename ${workspace_tar} .tar)
 
-    /usr/gitc/gatk SpanIntervals -L ${interval} -R ${ref_fasta} -O spanning.interval_list
+    /gatk/gatk SpanIntervals -L ${interval} -R ${ref_fasta} -O spanning.interval_list
 
-    /usr/gitc/gatk --java-options -Xms5g \
+    /gatk/gatk --java-options -Xms5g \
      GenotypeGVCFs \
      -R ${ref_fasta} \
      -O ${output_vcf_filename} \
