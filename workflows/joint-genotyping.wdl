@@ -102,9 +102,8 @@ task SplitIntervalList {
    >>>
 
   runtime {
-    memory: "3 GB"
-    preemptible: 5
-    docker: "ldgauthier/gatk_exome_joint_calling"
+    lsf_memory:  3072
+    singularity: "/software/hgi/containers/gatk-4.1.0.0.simg"
   }
 
   output {
@@ -149,10 +148,9 @@ task ImportGVCFs {
   >>>
 
   runtime {
-    memory: "7 GB"
-    cpu: "2"
-    preemptible: 5
-    docker: "ldgauthier/gatk_exome_joint_calling"
+    lsf_memory:  7168
+    lsf_cores:   2
+    singularity: "/software/hgi/containers/gatk-4.1.0.0.simg"
   }
 
   output {
@@ -193,10 +191,9 @@ task GenotypeGVCFs {
   >>>
 
   runtime {
-    memory: "7 GB"
-    cpu: "2"
-    preemptible: 5
-    docker: "ldgauthier/gatk_exome_joint_calling"
+    lsf_memory:  7168
+    lsf_cores:   2
+    singularity: "/software/hgi/containers/gatk-4.1.0.0.simg"
   }
 
   output {
