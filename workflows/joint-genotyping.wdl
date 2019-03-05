@@ -1,3 +1,4 @@
+# Joint Calling Workflow
 # Copyright (c) 2019 Genome Research Limited
 # Licensed under GPLv3, or later
 
