@@ -16,10 +16,6 @@ workflow JointGenotypingForExomes {
   File ref_dict
 
   File dbsnp_vcf
-  File dbsnp_vcf_index
-
-  Int small_disk
-  Int medium_disk
 
   Array[Array[String]] sample_name_map_lines = read_tsv(sample_name_map)
   Int num_gvcfs = length(sample_name_map_lines)
@@ -39,7 +35,6 @@ workflow JointGenotypingForExomes {
       ref_fasta = ref_fasta,
       ref_fasta_index = ref_fasta_index,
       ref_dict = ref_dict,
-      disk_size = small_disk
   }
 
   Array[File] unpadded_intervals = SplitIntervalList.output_intervals
@@ -57,7 +52,6 @@ workflow JointGenotypingForExomes {
         ref_fasta_index = ref_fasta_index,
         ref_dict = ref_dict,
         workspace_dir_name = "genomicsdb",
-        disk_size = medium_disk,
         batch_size = 50
     }
 
@@ -70,7 +64,6 @@ workflow JointGenotypingForExomes {
         ref_fasta_index = ref_fasta_index,
         ref_dict = ref_dict,
         dbsnp_vcf = dbsnp_vcf,
-        disk_size = medium_disk
     }
   }
 
@@ -97,7 +90,6 @@ workflow JointGenotypingForExomes {
 
 task SplitIntervalList {
   String intervalList
-  Int disk_size
   Int scatterCount
   File ref_fasta
   File ref_fasta_index
@@ -112,7 +104,6 @@ task SplitIntervalList {
   runtime {
     memory: "3 GB"
     preemptible: 5
-    disks: "local-disk " + disk_size + " HDD"
     docker: "ldgauthier/gatk_exome_joint_calling"
   }
 
@@ -130,7 +121,6 @@ task ImportGVCFs {
 
   String workspace_dir_name
 
-  Int disk_size
   Int batch_size
 
   command <<<
@@ -161,7 +151,6 @@ task ImportGVCFs {
   runtime {
     memory: "7 GB"
     cpu: "2"
-    disks: "local-disk " + disk_size + " HDD"
     preemptible: 5
     docker: "ldgauthier/gatk_exome_joint_calling"
   }
@@ -182,8 +171,6 @@ task GenotypeGVCFs {
   File ref_dict
 
   String dbsnp_vcf
-
-  Int disk_size
 
   command <<<
     set -euo pipefail
@@ -208,7 +195,6 @@ task GenotypeGVCFs {
   runtime {
     memory: "7 GB"
     cpu: "2"
-    disks: "local-disk " + disk_size + " HDD"
     preemptible: 5
     docker: "ldgauthier/gatk_exome_joint_calling"
   }
