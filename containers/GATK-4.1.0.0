@@ -1,0 +1,13 @@
+Bootstrap: docker
+From: broadinstitute/gatk:4.1.0.0
+
+%runscript
+  exec /gatk/gatk "$@"
+
+%help
+Containerised GATK 4.1.0.0, built from the official Docker image
+distributed by the Broad Institute.
+
+%labels
+  Maintainer  Christopher Harrison <ch12@sanger.ac.uk>
+  Version     4.1.0.0
