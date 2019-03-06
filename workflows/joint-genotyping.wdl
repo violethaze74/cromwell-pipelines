@@ -7,92 +7,83 @@
 # Licensed under the BSD 3-Clause License
 
 workflow JointGenotypingForExomes {
-  File unpadded_intervals_file
+  # Inputs
+  # n.b., Use camelCase for clarity; snake_case is used for derivatives
+  File referenceFASTA     # Reference FASTA file
+  File sampleNameMap      # Sample name mapping
+  File unpaddedIntervals  # List of unpadded intervals
+  File dbsnpVCF           # dbSNP VCF
+  Int? vcfCount           # Optional: Scatter count
 
-  String callset_name
-  File sample_name_map
+  Array[Array[String]] sample_name_map_lines = read_tsv(sampleNameMap)
+  Int gvcf_count = length(sample_name_map_lines)
 
-  File ref_fasta
+  # Make a 2.5:1 interval number to samples in callset ratio interval
+  # list. We allow overriding the behaviour by specifying the desired
+  # number of VCFs to scatter over for testing/special requests.
+  # n.b., WGS runs get 30x more scattering than exome and exome scatter
+  # count per sample is 0.05 (modulo 10 <= scatter_count <= 1000)
+  # TODO Bound scatter_count by 1000
+  # TODO If vcfCount is specified, then presumably it must be <= gvcf_count
+  Int unbounded_scatter_count = select_first([vcfCount, round(0.05 * gvcf_count)])
+  Int scatter_count = if unbounded_scatter_count > 10 then unbounded_scatter_count else 10
 
-  File dbsnp_vcf
-
-  Array[Array[String]] sample_name_map_lines = read_tsv(sample_name_map)
-  Int num_gvcfs = length(sample_name_map_lines)
-
-  # Make a 2.5:1 interval number to samples in callset ratio interval list.
-  # We allow overriding the behavior by specifying the desired number of vcfs
-  # to scatter over for testing / special requests.
-  # Zamboni notes say "WGS runs get 30x more scattering than Exome" and
-  # exome scatterCountPerSample is 0.05, min scatter 10, max 1000
-  Int? vcf_count
-  Int unboundedScatterCount = select_first([vcf_count, round(0.05 * num_gvcfs)])
-  Int scatterCount = if unboundedScatterCount > 10 then unboundedScatterCount else 10 #I think weird things happen if scatterCount is 1 -- IntervalListTools is noop?
   call SplitIntervalList {
     input:
-      intervalList = unpadded_intervals_file,
-      scatterCount = scatterCount,
-      ref_fasta    = ref_fasta
+      referenceFASTA = referenceFASTA,
+      intervalList   = unpaddedIntervals,
+      scatter_count  = scatter_count
   }
 
   Array[File] unpadded_intervals = SplitIntervalList.output_intervals
 
   scatter (idx in range(length(unpadded_intervals))) {
-    # The batch_size value was carefully chosen here as it
-    # is the optimal value for the amount of memory allocated
-    # within the task; please do not change it without consulting
-    # the Hellbender (GATK engine) team!
+    # The batch_size value was carefully chosen here as it is the
+    # optimal value for the amount of memory allocated within the task;
+    # please do not change it without consulting the GATK engine team!
     call ImportGVCFs {
       input:
-        sample_name_map = sample_name_map,
-        interval = unpadded_intervals[idx],
-        ref_fasta = ref_fasta,
-        ref_fasta_index = ref_fasta_index,
-        ref_dict = ref_dict,
+        sampleNameMap      = sampleNameMap,
+        interval           = unpadded_intervals[idx],
         workspace_dir_name = "genomicsdb",
-        batch_size = 50
+        batch_size         = 50
     }
 
     call GenotypeGVCFs {
       input:
-        workspace_tar = ImportGVCFs.output_genomicsdb,
-        interval = unpadded_intervals[idx],
-        output_vcf_filename = "output.vcf.gz",
-        ref_fasta = ref_fasta,
-        ref_fasta_index = ref_fasta_index,
-        ref_dict = ref_dict,
-        dbsnp_vcf = dbsnp_vcf,
+        referenceFASTA      = referenceFASTA,
+        dbsnpVCF            = dbsnpVCF,
+        workspace_tar       = ImportGVCFs.output_genomicsdb,
+        interval            = unpadded_intervals[idx],
+        output_vcf_filename = "output.vcf.gz"
     }
   }
 
   output {
-    # TODO
+    GenotypeGVCFs.output_vcf
+    GenotypeGVCFs.output_vcf_index
   }
 }
 
-## The raw intervals file given as input to the workflow might contain a TON of entries, to
-## the point that scattering over all of them would kill Cromwell. This task scans the file
-## for contiguous intervals which can be processed together to reduce the scatter width.
-##
-## Input intervals are expected to look like:
-##     chr1:1-195878
-##     chr1:195879-391754
-##     chr2:1-161787
-##     chr2:323574-323584
-##
-## For that specific input, the output would look like:
-##     chr1:1-391754
-##     chr2:1-161787
-##     chr2:323574-323584
-#
-
 task SplitIntervalList {
+  # The raw intervals file given as input to the workflow might contain
+  # a TON of entries, to the point that scattering over all of them
+  # would kill Cromwell. This task scans the file for contiguous
+  # intervals which can be processed together to reduce the scatter
+  # width. For example:
+  #
+  #   chr1:1-195878       \      chr1:1-391754
+  #   chr1:195879-391754   \___  chr2:1-161787
+  #   chr2:1-161787        /     chr2:323574-323584
+  #   chr2:323574-323584  /
+
   String intervalList
-  Int    scatterCount
-  File   ref_fasta
+  Int    scatter_count
+  File   referenceFASTA
 
   command <<<
     /gatk/gatk SplitIntervals \
-      -L "${intervalList}" -O scatterDir -scatter ${scatterCount} -R "${ref_fasta}" \
+      -L "${intervalList}" -O scatterDir -scatter ${scatter_count} -R "${referenceFASTA}" \
       -mode BALANCING_WITHOUT_INTERVAL_SUBDIVISION_WITH_OVERFLOW
   >>>
 
@@ -107,37 +98,37 @@ task SplitIntervalList {
 }
 
 task ImportGVCFs {
-  File sample_name_map
-  File interval
-  File ref_fasta
-
+  File   sampleNameMap
+  File   interval
   String workspace_dir_name
-
-  Int batch_size
+  Int    batch_size
 
   command <<<
     set -euo pipefail
 
-    rm -rf ${workspace_dir_name}
+    rm -rf "${workspace_dir_name}"
 
-    #We've seen some GenomicsDB performance regressions related to intervals, so we're going to only supply a single interval
-    #There's no data in between since we didn't run HaplotypeCaller over those loci so we're not wasting any compute
-    #/usr/gitc/gatk SpanIntervals -L ${interval} -R ${ref_fasta} -O spanning.interval_list
-    # The memory setting here is very important and must be several GB lower
-    # than the total memory allocated to the VM because this tool uses
-    # a significant amount of non-heap memory for native libraries.
-    # Also, testing has shown that the multithreaded reader initialization
-    # does not scale well beyond 5 threads, so don't increase beyond that.
+    # We've seen some GenomicsDB performance regressions related to
+    # intervals, so we're going to only supply a single interval.
+    # There's no data in between since we didn't run HaplotypeCaller
+    # over those loci so we're not wasting any compute
+
+    # The memory setting here is very important and must be several GB
+    # lower than the total allocation because this tool uses a
+    # significant amount of non-heap memory for native libraries. Also,
+    # testing has shown that the multithreaded reader initialization
+    # does not scale well beyond 5 threads.
+    # TODO Set -Xms option based on lsf_memory, rather than hardcoded
     /gatk/gatk --java-options -Xms4g \
       GenomicsDBImport \
-      --genomicsdb-workspace-path ${workspace_dir_name} \
+      --genomicsdb-workspace-path "${workspace_dir_name}" \
       --batch-size ${batch_size} \
-      -L ${interval} \
-      --sample-name-map ${sample_name_map} \
+      -L "${interval}" \
+      --sample-name-map "${sampleNameMap}" \
       --reader-threads 1 \
       -ip 500
 
-    tar -cf ${workspace_dir_name}.tar ${workspace_dir_name}
+    tar -cf "${workspace_dir_name}.tar" "${workspace_dir_name}"
   >>>
 
   runtime {
@@ -152,33 +143,33 @@ task ImportGVCFs {
 }
 
 task GenotypeGVCFs {
-  File workspace_tar
+  File   referenceFASTA
+  File   dbsnpVCF
+  File   workspace_tar
   String interval
-
   String output_vcf_filename
-
-  File ref_fasta
-
-  String dbsnp_vcf
 
   command <<<
     set -euo pipefail
 
-    tar -xf ${workspace_tar}
-    WORKSPACE=$(basename ${workspace_tar} .tar)
+    tar -xf "${workspace_tar}"
+    WORKSPACE="$(basename "${workspace_tar}" .tar)"
 
-    /gatk/gatk SpanIntervals -L ${interval} -R ${ref_fasta} -O spanning.interval_list
+    /gatk/gatk SpanIntervals \
+      -L "${interval}" -R "${referenceFASTA}" -O spanning.interval_list
 
+    # TODO Set -Xms option based on lsf_memory, rather than hardcoded
+    # (see note in ImportGVCFs task, above, for justification)
     /gatk/gatk --java-options -Xms5g \
-     GenotypeGVCFs \
-     -R ${ref_fasta} \
-     -O ${output_vcf_filename} \
-     -D ${dbsnp_vcf} \
-     -G StandardAnnotation -G AS_StandardAnnotation \
-     --only-output-calls-starting-in-intervals \
-     --use-new-qual-calculator \
-     -V gendb://$WORKSPACE \
-     -L spanning.interval_list
+      GenotypeGVCFs \
+      -R "${referenceFASTA}" \
+      -O "${output_vcf_filename}" \
+      -D "${dbsnpVCF}" \
+      -G StandardAnnotation -G AS_StandardAnnotation \
+      --only-output-calls-starting-in-intervals \
+      --use-new-qual-calculator \
+      -V "gendb://$WORKSPACE" \
+      -L spanning.interval_list
   >>>
 
   runtime {
