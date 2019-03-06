@@ -92,7 +92,13 @@ task SplitIntervalList {
 
   runtime {
     lsf_memory:  3072
-    singularity: "/software/hgi/containers/gatk-4.1.0.0.sif"
+
+    # TODO We use Laura Gauthier's GATK fork for joint calling
+    # (4.0.11.0-22-gae8e9f0-SNAPSHOT), which we've pressed into a
+    # Singularity 2.5.2 image. Move this to production GATK in a SIF
+    # (Singularity 3.0) container once the necessary conditions are met.
+    singularity: "/software/hgi/containers/gatk-jointcalling.simg"
+    # singularity: "/software/hgi/containers/gatk-4.1.0.0.sif"
   }
 
   output {
@@ -137,7 +143,13 @@ task ImportGVCFs {
   runtime {
     lsf_memory:  7168
     lsf_cores:   2
-    singularity: "/software/hgi/containers/gatk-4.1.0.0.sif"
+
+    # TODO We use Laura Gauthier's GATK fork for joint calling
+    # (4.0.11.0-22-gae8e9f0-SNAPSHOT), which we've pressed into a
+    # Singularity 2.5.2 image. Move this to production GATK in a SIF
+    # (Singularity 3.0) container once the necessary conditions are met.
+    singularity: "/software/hgi/containers/gatk-jointcalling.simg"
+    # singularity: "/software/hgi/containers/gatk-4.1.0.0.sif"
   }
 
   output {
@@ -158,9 +170,6 @@ task GenotypeGVCFs {
     tar -xf "${workspace_tar}"
     WORKSPACE="$(basename "${workspace_tar}" .tar)"
 
-    # TODO SpanIntervals is only available in Laura Gauthier's GATK fork
-    # (4.0.11.0-22-gae8e9f0-SNAPSHOT). This is available on DockerHub as
-    # ldgauthier/gatk_exome_joint_calling, where GATK is in /usr/gitc
     /gatk/gatk SpanIntervals \
       -L "${interval}" -R "${referenceFASTA}" -O spanning.interval_list
 
@@ -181,7 +190,13 @@ task GenotypeGVCFs {
   runtime {
     lsf_memory:  7168
     lsf_cores:   2
-    singularity: "/software/hgi/containers/gatk-4.1.0.0.sif"
+
+    # TODO We use Laura Gauthier's GATK fork for joint calling
+    # (4.0.11.0-22-gae8e9f0-SNAPSHOT), which we've pressed into a
+    # Singularity 2.5.2 image. Move this to production GATK in a SIF
+    # (Singularity 3.0) container once the necessary conditions are met.
+    singularity: "/software/hgi/containers/gatk-jointcalling.simg"
+    # singularity: "/software/hgi/containers/gatk-4.1.0.0.sif"
   }
 
   output {
