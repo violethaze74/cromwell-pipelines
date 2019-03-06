@@ -59,9 +59,12 @@ workflow JointGenotypingForExomes {
     }
   }
 
+  # TODO We ought to have a gather stage here, surely? Broad's original
+  # task uses GatherVcfsCloud in their VQSR step; we'll have to use
+  # vanilla GatherVcfs...
+
   output {
-    GenotypeGVCFs.output_vcf
-    GenotypeGVCFs.output_vcf_index
+    # TODO Gathered output from scatter
   }
 }
 
@@ -155,6 +158,7 @@ task GenotypeGVCFs {
     tar -xf "${workspace_tar}"
     WORKSPACE="$(basename "${workspace_tar}" .tar)"
 
+    # FIXME GATK 4.1.0.0 does not have a SpanIntervals command!?
     /gatk/gatk SpanIntervals \
       -L "${interval}" -R "${referenceFASTA}" -O spanning.interval_list
 
