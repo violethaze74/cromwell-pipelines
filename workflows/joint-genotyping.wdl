@@ -13,8 +13,6 @@ workflow JointGenotypingForExomes {
   File sample_name_map
 
   File ref_fasta
-  File ref_fasta_index
-  File ref_dict
 
   File dbsnp_vcf
 
@@ -33,9 +31,7 @@ workflow JointGenotypingForExomes {
     input:
       intervalList = unpadded_intervals_file,
       scatterCount = scatterCount,
-      ref_fasta = ref_fasta,
-      ref_fasta_index = ref_fasta_index,
-      ref_dict = ref_dict,
+      ref_fasta    = ref_fasta
   }
 
   Array[File] unpadded_intervals = SplitIntervalList.output_intervals
@@ -92,9 +88,7 @@ workflow JointGenotypingForExomes {
 task SplitIntervalList {
   String intervalList
   Int scatterCount
-  File ref_fasta
-  File ref_fasta_index
-  File ref_dict
+  File   ref_fasta
 
   command <<<
     /gatk/gatk SplitIntervals \
@@ -116,8 +110,6 @@ task ImportGVCFs {
   File sample_name_map
   File interval
   File ref_fasta
-  File ref_fasta_index
-  File ref_dict
 
   String workspace_dir_name
 
@@ -166,8 +158,6 @@ task GenotypeGVCFs {
   String output_vcf_filename
 
   File ref_fasta
-  File ref_fasta_index
-  File ref_dict
 
   String dbsnp_vcf
 
