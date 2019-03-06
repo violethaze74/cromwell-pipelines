@@ -158,7 +158,9 @@ task GenotypeGVCFs {
     tar -xf "${workspace_tar}"
     WORKSPACE="$(basename "${workspace_tar}" .tar)"
 
-    # FIXME GATK 4.1.0.0 does not have a SpanIntervals command!?
+    # TODO SpanIntervals is only available in Laura Gauthier's GATK fork
+    # (4.0.11.0-22-gae8e9f0-SNAPSHOT). This is available on DockerHub as
+    # ldgauthier/gatk_exome_joint_calling, where GATK is in /usr/gitc
     /gatk/gatk SpanIntervals \
       -L "${interval}" -R "${referenceFASTA}" -O spanning.interval_list
 
