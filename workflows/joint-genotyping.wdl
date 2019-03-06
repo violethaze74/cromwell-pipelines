@@ -87,14 +87,14 @@ workflow JointGenotypingForExomes {
 
 task SplitIntervalList {
   String intervalList
-  Int scatterCount
+  Int    scatterCount
   File   ref_fasta
 
   command <<<
     /gatk/gatk SplitIntervals \
-      -L ${intervalList} -O  scatterDir -scatter ${scatterCount} -R ${ref_fasta} \
+      -L "${intervalList}" -O scatterDir -scatter ${scatterCount} -R "${ref_fasta}" \
       -mode BALANCING_WITHOUT_INTERVAL_SUBDIVISION_WITH_OVERFLOW
-   >>>
+  >>>
 
   runtime {
     lsf_memory:  3072
