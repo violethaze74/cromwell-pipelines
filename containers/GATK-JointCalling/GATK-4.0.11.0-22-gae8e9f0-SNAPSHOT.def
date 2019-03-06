@@ -1,0 +1,19 @@
+Bootstrap: docker
+From: ldgauthier/gatk_exome_joint_calling
+
+%setup
+  mkdir -p ${SINGULARITY_ROOTFS}/gatk
+
+%files
+  gatk /gatk
+
+%runscript
+  exec /gatk/gatk "$@"
+
+%help
+Containerised fork of GATK 4.0.11.0, built from Laura Gauthier's image,
+for joint calling.
+
+%labels
+  Maintainer  Christopher Harrison <ch12@sanger.ac.uk>
+  Version     4.0.11.0-22-gae8e9f0-SNAPSHOT
