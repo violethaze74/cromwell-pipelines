@@ -92,7 +92,7 @@ task SplitIntervalList {
 
   runtime {
     lsf_memory:  3072
-    singularity: "/software/hgi/containers/gatk-4.1.0.0.simg"
+    singularity: "/software/hgi/containers/gatk-4.1.0.0.sif"
   }
 
   output {
@@ -137,7 +137,7 @@ task ImportGVCFs {
   runtime {
     lsf_memory:  7168
     lsf_cores:   2
-    singularity: "/software/hgi/containers/gatk-4.1.0.0.simg"
+    singularity: "/software/hgi/containers/gatk-4.1.0.0.sif"
   }
 
   output {
@@ -181,7 +181,7 @@ task GenotypeGVCFs {
   runtime {
     lsf_memory:  7168
     lsf_cores:   2
-    singularity: "/software/hgi/containers/gatk-4.1.0.0.simg"
+    singularity: "/software/hgi/containers/gatk-4.1.0.0.sif"
   }
 
   output {
