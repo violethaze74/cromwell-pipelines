@@ -10,6 +10,8 @@ workflow JointCalling {
   # Inputs
   # n.b., Use camelCase for clarity; snake_case is used for derivatives
   File referenceFASTA     # Reference FASTA file
+  File referenceIndex     # Reference index
+  File referenceDict      # Reference dictionary
   File sampleNameMap      # Sample name mapping
   File unpaddedIntervals  # List of unpadded intervals
   File dbsnpVCF           # dbSNP VCF
@@ -31,6 +33,8 @@ workflow JointCalling {
   call SplitIntervalList {
     input:
       referenceFASTA = referenceFASTA,
+      referenceIndex = referenceIndex,
+      referenceDict  = referenceDict,
       intervalList   = unpaddedIntervals,
       scatter_count  = scatter_count
   }
@@ -52,6 +56,8 @@ workflow JointCalling {
     call GenotypeGVCFs {
       input:
         referenceFASTA      = referenceFASTA,
+        referenceIndex      = referenceIndex,
+        referenceDict       = referenceDict,
         dbsnpVCF            = dbsnpVCF,
         workspace_tar       = ImportGVCFs.output_genomicsdb,
         interval            = unpadded_intervals[idx],
@@ -83,6 +89,8 @@ task SplitIntervalList {
   String intervalList
   Int    scatter_count
   File   referenceFASTA
+  File   referenceIndex
+  File   referenceDict
 
   command <<<
     /gatk/gatk SplitIntervals \
@@ -159,6 +167,8 @@ task ImportGVCFs {
 
 task GenotypeGVCFs {
   File   referenceFASTA
+  File   referenceIndex
+  File   referenceDict
   File   dbsnpVCF
   File   workspace_tar
   String interval
