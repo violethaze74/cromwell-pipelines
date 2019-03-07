@@ -15,6 +15,7 @@ workflow JointCalling {
   File sampleNameMap      # Sample name mapping
   File unpaddedIntervals  # List of unpadded intervals
   File dbsnpVCF           # dbSNP VCF
+  File dbsnpVCFIndex      # dbSNP VCF index
   Int? vcfCount           # Optional: Scatter count
 
   Array[Array[String]] sample_name_map_lines = read_tsv(sampleNameMap)
@@ -59,6 +60,7 @@ workflow JointCalling {
         referenceIndex      = referenceIndex,
         referenceDict       = referenceDict,
         dbsnpVCF            = dbsnpVCF,
+        dbsnpVCFIndex       = dbsnpVCFIndex,
         workspace_tar       = ImportGVCFs.output_genomicsdb,
         interval            = unpadded_intervals[idx],
         output_vcf_filename = "output.vcf.gz"
@@ -170,6 +172,7 @@ task GenotypeGVCFs {
   File   referenceIndex
   File   referenceDict
   File   dbsnpVCF
+  File   dbsnpVCFIndex
   File   workspace_tar
   String interval
   String output_vcf_filename
