@@ -6,7 +6,7 @@
 # Copyright (c) 2019 Broad Institute
 # Licensed under the BSD 3-Clause License
 
-workflow JointGenotypingForExomes {
+workflow JointCalling {
   # Inputs
   # n.b., Use camelCase for clarity; snake_case is used for derivatives
   File referenceFASTA     # Reference FASTA file
