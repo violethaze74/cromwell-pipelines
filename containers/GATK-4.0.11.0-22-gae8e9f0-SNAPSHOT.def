@@ -3,9 +3,7 @@ From: ldgauthier/gatk_exome_joint_calling
 
 %setup
   mkdir -p ${SINGULARITY_ROOTFS}/gatk
-
-%files
-  gatk /gatk
+  ln -s /usr/gitc/gatk ${SINGULARITY_ROOTFS}/gatk/gatk
 
 %runscript
   exec /gatk/gatk "$@"
