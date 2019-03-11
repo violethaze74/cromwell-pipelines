@@ -153,7 +153,9 @@ task ImportGVCFs {
     lsf_memory:  7168
     lsf_cores:   2
 
-    # TODO Temp space LSF resource allocation
+    # TODO Temporary space requirement should be a function of,
+    # presumably, the interval size; set to 20GiB for now...
+    lsf_resources: "rusage[tmp=20480]"
 
     # TODO We use Laura Gauthier's GATK fork for joint calling
     # (4.0.11.0-22-gae8e9f0-SNAPSHOT), which we've pressed into a
@@ -207,7 +209,9 @@ task GenotypeGVCFs {
     lsf_memory:  7168
     lsf_cores:   2
 
-    # TODO Temp space LSF resource allocation
+    # TODO Temporary space requirement should be a function of,
+    # presumably, the interval size; set to 20GiB for now...
+    lsf_resources: "rusage[tmp=20480]"
 
     # TODO We use Laura Gauthier's GATK fork for joint calling
     # (4.0.11.0-22-gae8e9f0-SNAPSHOT), which we've pressed into a
