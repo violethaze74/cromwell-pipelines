@@ -50,9 +50,7 @@ workflow JointCalling {
       input:
         sampleNameMap      = sampleNameMap,
         interval           = unpadded_intervals[idx],
-        workspace_dir_name = "genomicsdb",
-        batch_size         = 50,
-	idx                = idx
+        batch_size         = 50
     }
 
     call GenotypeGVCFs {
@@ -120,14 +118,12 @@ task SplitIntervalList {
 task ImportGVCFs {
   File   sampleNameMap
   File   interval
-  String workspace_dir_name
   Int    batch_size
-  Int    idx
 
   command <<<
     set -euo pipefail
 
-    rm -rf "${workspace_dir_name}"
+    declare WORKSPACE="$(mktemp -d)"
 
     # We've seen some GenomicsDB performance regressions related to
     # intervals, so we're going to only supply a single interval.
@@ -142,19 +138,22 @@ task ImportGVCFs {
     # TODO Set -Xms option based on lsf_memory, rather than hardcoded
     /gatk/gatk --java-options -Xms4g \
       GenomicsDBImport \
-      --genomicsdb-workspace-path /tmp/gdb${idx} \
+      --genomicsdb-workspace-path "$WORKSPACE" \
       --batch-size ${batch_size} \
       -L "${interval}" \
       --sample-name-map "${sampleNameMap}" \
       --reader-threads 1 \
       -ip 500
 
-    tar -cf "${workspace_dir_name}.tar" /tmp/gdb${idx}
+    tar cf "genomicsdb.tar" -C "$WORKSPACE" .
+    rm -rf "$WORKSPACE"
   >>>
 
   runtime {
     lsf_memory:  7168
     lsf_cores:   2
+
+    # TODO Temp space LSF resource allocation
 
     # TODO We use Laura Gauthier's GATK fork for joint calling
     # (4.0.11.0-22-gae8e9f0-SNAPSHOT), which we've pressed into a
@@ -165,7 +164,7 @@ task ImportGVCFs {
   }
 
   output {
-    File output_genomicsdb = "${workspace_dir_name}.tar"
+    File output_genomicsdb = "genomicsdb.tar"
   }
 }
 
@@ -181,9 +180,9 @@ task GenotypeGVCFs {
 
   command <<<
     set -euo pipefail
-    WORKSPACE="$(basename "${workspace_tar}" .tar)"
-    mkdir -p $WORKSPACE
-    tar --strip-components 2  -C $WORKSPACE -xf "${workspace_tar}"
+
+    declare WORKSPACE="$(mktemp -d)"
+    tar xf "${workspace_tar}" -C "$WORKSPACE"
 
     /gatk/gatk SpanIntervals \
       -L "${interval}" -R "${referenceFASTA}" -O spanning.interval_list
@@ -200,11 +199,15 @@ task GenotypeGVCFs {
       --use-new-qual-calculator \
       -V "gendb://$WORKSPACE" \
       -L spanning.interval_list
+
+    rm -rf "$WORKSPACE"
   >>>
 
   runtime {
     lsf_memory:  7168
     lsf_cores:   2
+
+    # TODO Temp space LSF resource allocation
 
     # TODO We use Laura Gauthier's GATK fork for joint calling
     # (4.0.11.0-22-gae8e9f0-SNAPSHOT), which we've pressed into a
