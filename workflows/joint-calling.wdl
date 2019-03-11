@@ -51,7 +51,8 @@ workflow JointCalling {
         sampleNameMap      = sampleNameMap,
         interval           = unpadded_intervals[idx],
         workspace_dir_name = "genomicsdb",
-        batch_size         = 50
+        batch_size         = 50,
+	idx                = idx
     }
 
     call GenotypeGVCFs {
@@ -121,6 +122,7 @@ task ImportGVCFs {
   File   interval
   String workspace_dir_name
   Int    batch_size
+  Int    idx
 
   command <<<
     set -euo pipefail
@@ -140,14 +142,14 @@ task ImportGVCFs {
     # TODO Set -Xms option based on lsf_memory, rather than hardcoded
     /gatk/gatk --java-options -Xms4g \
       GenomicsDBImport \
-      --genomicsdb-workspace-path "${workspace_dir_name}" \
+      --genomicsdb-workspace-path /tmp/gdb${idx} \
       --batch-size ${batch_size} \
       -L "${interval}" \
       --sample-name-map "${sampleNameMap}" \
       --reader-threads 1 \
       -ip 500
 
-    tar -cf "${workspace_dir_name}.tar" "${workspace_dir_name}"
+    tar -cf "${workspace_dir_name}.tar" /tmp/gdb${idx}
   >>>
 
   runtime {
@@ -179,9 +181,9 @@ task GenotypeGVCFs {
 
   command <<<
     set -euo pipefail
-
-    tar -xf "${workspace_tar}"
     WORKSPACE="$(basename "${workspace_tar}" .tar)"
+    mkdir -p $WORKSPACE
+    tar --strip-components 2  -C $WORKSPACE -xf "${workspace_tar}"
 
     /gatk/gatk SpanIntervals \
       -L "${interval}" -R "${referenceFASTA}" -O spanning.interval_list
