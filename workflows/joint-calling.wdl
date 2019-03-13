@@ -48,9 +48,9 @@ workflow JointCalling {
     # please do not change it without consulting the GATK engine team!
     call ImportGVCFs {
       input:
-        sampleNameMap      = sampleNameMap,
-        interval           = unpadded_intervals[idx],
-        batch_size         = 50
+        sampleNameMap = sampleNameMap,
+        interval      = unpadded_intervals[idx],
+        batch_size    = 50
     }
 
     call GenotypeGVCFs {
@@ -94,13 +94,14 @@ task SplitIntervalList {
   File   referenceDict
 
   command <<<
-    /gatk/gatk SplitIntervals \
+    /gatk/gatk --java-options "-Xms3g -Xmx3g" \
+      SplitIntervals \
       -L "${intervalList}" -O scatterDir -scatter ${scatter_count} -R "${referenceFASTA}" \
       -mode BALANCING_WITHOUT_INTERVAL_SUBDIVISION_WITH_OVERFLOW
   >>>
 
   runtime {
-    lsf_memory:  3072
+    lsf_memory: 3072
 
     # TODO Move this to SIF (Singularity 3.0) container when ready
     singularity: "/software/hgi/containers/gatk-4.1.0.0.simg"
@@ -113,9 +114,9 @@ task SplitIntervalList {
 }
 
 task ImportGVCFs {
-  File   sampleNameMap
-  File   interval
-  Int    batch_size
+  File sampleNameMap
+  File interval
+  Int  batch_size
 
   command <<<
     set -euo pipefail
@@ -139,7 +140,7 @@ task ImportGVCFs {
     # testing has shown that the multithreaded reader initialization
     # does not scale well beyond 5 threads.
     # TODO Set -Xms option based on lsf_memory, rather than hardcoded
-    /gatk/gatk --java-options -Xms4g \
+    /gatk/gatk --java-options "-Xms25g -Xmx25g" \
       GenomicsDBImport \
       --genomicsdb-workspace-path "$WORKSPACE" \
       --batch-size ${batch_size} \
@@ -154,8 +155,8 @@ task ImportGVCFs {
   >>>
 
   runtime {
-    lsf_memory:  7168
-    lsf_cores:   2
+    lsf_memory: 30720
+    lsf_cores:  2
 
     # TODO Temporary space requirement should be a function of,
     # presumably, the interval size; set to 20GiB for now...
@@ -192,7 +193,7 @@ task GenotypeGVCFs {
 
     # TODO Set -Xms option based on lsf_memory, rather than hardcoded
     # (see note in ImportGVCFs task, above, for justification)
-    /gatk/gatk --java-options -Xms5g \
+    /gatk/gatk --java-options "-Xms5g -Xmx5g" \
       GenotypeGVCFs \
       -R "${referenceFASTA}" \
       -O "${output_vcf_filename}" \
@@ -207,8 +208,8 @@ task GenotypeGVCFs {
   >>>
 
   runtime {
-    lsf_memory:  7168
-    lsf_cores:   2
+    lsf_memory: 7168
+    lsf_cores:  2
 
     # TODO Temporary space requirement should be a function of,
     # presumably, the interval size; set to 20GiB for now...
