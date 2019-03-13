@@ -126,7 +126,10 @@ task ImportGVCFs {
     # TODO Make TMPDIR parametrisable; this would best be done via a
     # runtime attribute, but tasks apparently don't have any visibility
     # of these in Cromwell.
-    declare WORKSPACE="$(TMPDIR="/tmp" mktemp -d)"
+    # FIXME Despite the documentation, GATK doesn't like it if the
+    # temporary directory already exists (even when it's empty); the
+    # below workaround is subject to race conditions
+    declare WORKSPACE="$(TMPDIR="/tmp" mktemp -du)"
 
     # We've seen some GenomicsDB performance regressions related to
     # intervals, so we're going to only supply a single interval.
