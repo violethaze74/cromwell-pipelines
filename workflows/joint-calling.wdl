@@ -123,7 +123,10 @@ task ImportGVCFs {
   command <<<
     set -euo pipefail
 
-    declare WORKSPACE="$(mktemp -d)"
+    # TODO Make TMPDIR parametrisable; this would best be done via a
+    # runtime attribute, but tasks apparently don't have any visibility
+    # of these in Cromwell.
+    declare WORKSPACE="$(TMPDIR="/tmp" mktemp -d)"
 
     # We've seen some GenomicsDB performance regressions related to
     # intervals, so we're going to only supply a single interval.
@@ -183,7 +186,10 @@ task GenotypeGVCFs {
   command <<<
     set -euo pipefail
 
-    declare WORKSPACE="$(mktemp -d)"
+    # TODO Make TMPDIR parametrisable; this would best be done via a
+    # runtime attribute, but tasks apparently don't have any visibility
+    # of these in Cromwell.
+    declare WORKSPACE="$(TMPDIR="/tmp" mktemp -d)"
     tar xf "${workspace_tar}" -C "$WORKSPACE"
 
     /gatk/gatk SpanIntervals \
