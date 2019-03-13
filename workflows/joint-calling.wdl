@@ -102,11 +102,8 @@ task SplitIntervalList {
   runtime {
     lsf_memory:  3072
 
-    # TODO We use Laura Gauthier's GATK fork for joint calling
-    # (4.0.11.0-22-gae8e9f0-SNAPSHOT), which we've pressed into a
-    # Singularity 2.5.2 image. Move this to production GATK in a SIF
-    # (Singularity 3.0) container once the necessary conditions are met.
-    singularity: "/software/hgi/containers/gatk-jointcalling.simg"
+    # TODO Move this to SIF (Singularity 3.0) container when ready
+    singularity: "/software/hgi/containers/gatk-4.1.0.0.simg"
     # singularity: "/software/hgi/containers/gatk-4.1.0.0.sif"
   }
 
@@ -147,6 +144,7 @@ task ImportGVCFs {
       --genomicsdb-workspace-path "$WORKSPACE" \
       --batch-size ${batch_size} \
       -L "${interval}" \
+      --merge-input-intervals \
       --sample-name-map "${sampleNameMap}" \
       --reader-threads 1 \
       -ip 500
@@ -163,11 +161,8 @@ task ImportGVCFs {
     # presumably, the interval size; set to 20GiB for now...
     lsf_resources: "rusage[tmp=20480]"
 
-    # TODO We use Laura Gauthier's GATK fork for joint calling
-    # (4.0.11.0-22-gae8e9f0-SNAPSHOT), which we've pressed into a
-    # Singularity 2.5.2 image. Move this to production GATK in a SIF
-    # (Singularity 3.0) container once the necessary conditions are met.
-    singularity: "/software/hgi/containers/gatk-jointcalling.simg"
+    # TODO Move this to SIF (Singularity 3.0) container when ready
+    singularity: "/software/hgi/containers/gatk-4.1.0.0.simg"
     # singularity: "/software/hgi/containers/gatk-4.1.0.0.sif"
   }
 
@@ -183,7 +178,7 @@ task GenotypeGVCFs {
   File   dbsnpVCF
   File   dbsnpVCFIndex
   File   workspace_tar
-  String interval
+  File   interval
   String output_vcf_filename
 
   command <<<
@@ -194,9 +189,6 @@ task GenotypeGVCFs {
     # of these in Cromwell.
     declare WORKSPACE="$(TMPDIR="/tmp" mktemp -d)"
     tar xf "${workspace_tar}" -C "$WORKSPACE"
-
-    /gatk/gatk SpanIntervals \
-      -L "${interval}" -R "${referenceFASTA}" -O spanning.interval_list
 
     # TODO Set -Xms option based on lsf_memory, rather than hardcoded
     # (see note in ImportGVCFs task, above, for justification)
@@ -209,7 +201,7 @@ task GenotypeGVCFs {
       --only-output-calls-starting-in-intervals \
       --use-new-qual-calculator \
       -V "gendb://$WORKSPACE" \
-      -L spanning.interval_list
+      -L "${interval}"
 
     rm -rf "$WORKSPACE"
   >>>
@@ -222,11 +214,8 @@ task GenotypeGVCFs {
     # presumably, the interval size; set to 20GiB for now...
     lsf_resources: "rusage[tmp=20480]"
 
-    # TODO We use Laura Gauthier's GATK fork for joint calling
-    # (4.0.11.0-22-gae8e9f0-SNAPSHOT), which we've pressed into a
-    # Singularity 2.5.2 image. Move this to production GATK in a SIF
-    # (Singularity 3.0) container once the necessary conditions are met.
-    singularity: "/software/hgi/containers/gatk-jointcalling.simg"
+    # TODO Move this to SIF (Singularity 3.0) container when ready
+    singularity: "/software/hgi/containers/gatk-4.1.0.0.simg"
     # singularity: "/software/hgi/containers/gatk-4.1.0.0.sif"
   }
 
