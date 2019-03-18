@@ -1,4 +1,4 @@
 [submodule "config"]
-	path = config
+	path = containerised-lsf
 	url = https://github.com/wtsi-hgi/olly-maersk.git
 	branch = master
