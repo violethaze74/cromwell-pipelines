@@ -119,7 +119,7 @@ task ImportGVCFs {
   Int  batch_size
 
   command <<<
-    set -euo pipefail
+    set -eu
 
     # TODO Make TMPDIR parametrisable; this would best be done via a
     # runtime attribute, but tasks apparently don't have any visibility
@@ -128,6 +128,7 @@ task ImportGVCFs {
     # temporary directory already exists (even when it's empty); the
     # below workaround is subject to race conditions
     declare WORKSPACE="$(TMPDIR="/tmp" mktemp -du)"
+    trap 'rm -rf "$WORKSPACE"' EXIT
 
     # We've seen some GenomicsDB performance regressions related to
     # intervals, so we're going to only supply a single interval.
@@ -151,7 +152,6 @@ task ImportGVCFs {
       -ip 500
 
     tar cf "genomicsdb.tar" -C "$WORKSPACE" .
-    rm -rf "$WORKSPACE"
   >>>
 
   runtime {
