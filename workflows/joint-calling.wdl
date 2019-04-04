@@ -183,12 +183,13 @@ task GenotypeGVCFs {
   String output_vcf_filename
 
   command <<<
-    set -euo pipefail
+    set -eu
 
     # TODO Make TMPDIR parametrisable; this would best be done via a
     # runtime attribute, but tasks apparently don't have any visibility
     # of these in Cromwell.
     declare WORKSPACE="$(TMPDIR="/tmp" mktemp -d)"
+    trap 'rm -rf "$WORKSPACE"' EXIT
     tar xf "${workspace_tar}" -C "$WORKSPACE"
 
     # TODO Set -Xms option based on lsf_memory, rather than hardcoded
@@ -203,8 +204,6 @@ task GenotypeGVCFs {
       --use-new-qual-calculator \
       -V "gendb://$WORKSPACE" \
       -L "${interval}"
-
-    rm -rf "$WORKSPACE"
   >>>
 
   runtime {
