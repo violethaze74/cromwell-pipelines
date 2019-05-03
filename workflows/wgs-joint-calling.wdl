@@ -34,30 +34,6 @@ workflow JointCalling {
 
   Array[String] unpadded_intervals = read_lines(DynamicallyCombineIntervals.output_intervals)
 
-#  Array[Array[String]] sample_name_map_lines = read_tsv(sampleNameMap)
-#  Int gvcf_count = length(sample_name_map_lines)
-#
-#  # Make a 2.5:1 interval number to samples in callset ratio interval
-#  # list. We allow overriding the behaviour by specifying the desired
-#  # number of VCFs to scatter over for testing/special requests.
-#  # n.b., WGS runs get 30x more scattering than exome and exome scatter
-#  # count per sample is 0.05 (modulo 10 <= scatter_count <= 1000)
-#  # TODO Bound scatter_count by 1000
-#  # TODO If vcfCount is specified, then presumably it must be <= gvcf_count
-#  Int unbounded_scatter_count = select_first([vcfCount, round(0.05 * gvcf_count)])
-#  Int scatter_count = if unbounded_scatter_count > 10 then unbounded_scatter_count else 10
-
-#  call SplitIntervalList {
-#    input:
-#      referenceFASTA = referenceFASTA,
-#      referenceIndex = referenceIndex,
-#      referenceDict  = referenceDict,
-#      intervalList   = unpaddedIntervals,
-#      scatter_count  = scatter_count
-#  }
-#
-#  Array[File] unpadded_intervals = SplitIntervalList.output_intervals
-
   scatter (idx in range(length(unpadded_intervals))) {
     # The batch_size value was carefully chosen here as it is the
     # optimal value for the amount of memory allocated within the task;
@@ -88,44 +64,6 @@ workflow JointCalling {
 
   output {
     # TODO Gathered output from scatter
-  }
-}
-
-task SplitIntervalList {
-  # The raw intervals file given as input to the workflow might contain
-  # a TON of entries, to the point that scattering over all of them
-  # would kill Cromwell. This task scans the file for contiguous
-  # intervals which can be processed together to reduce the scatter
-  # width. For example:
-  #
-  #   chr1:1-195878       \      chr1:1-391754
-  #   chr1:195879-391754   \___  chr2:1-161787
-  #   chr2:1-161787        /     chr2:323574-323584
-  #   chr2:323574-323584  /
-
-  String intervalList
-  Int    scatter_count
-  File   referenceFASTA
-  File   referenceIndex
-  File   referenceDict
-
-  command <<<
-    /gatk/gatk --java-options "-Xms3g -Xmx3g" \
-      SplitIntervals \
-      -L "${intervalList}" -O scatterDir -scatter ${scatter_count} -R "${referenceFASTA}" \
-      -mode BALANCING_WITHOUT_INTERVAL_SUBDIVISION_WITH_OVERFLOW
-  >>>
-
-  runtime {
-    lsf_memory: 3072
-
-    # TODO Move this to SIF (Singularity 3.0) container when ready
-    singularity: "/software/hgi/containers/gatk-4.1.0.0.simg"
-    # singularity: "/software/hgi/containers/gatk-4.1.0.0.sif"
-  }
-
-  output {
-    Array[File] output_intervals = glob("scatterDir/*")
   }
 }
 
